@@ -49,6 +49,8 @@ h1, h2, h3 {
     padding: 15px;
 }
 
+img{ width:100%; max-width:600px; }
+
 #wrapper.toggled #page-content-wrapper {
     position: absolute;
     margin-right: -300px;
