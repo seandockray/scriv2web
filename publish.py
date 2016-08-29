@@ -51,12 +51,15 @@ def load_docs(dir):
 
 def convert_docs(output_dir, bibliography_file=False, citation_format=False):
     ''' Converts all rtf files to txt using textutil then html using pandoc '''
-    dir='./.tmp'
+    dir='./.markdown'
     #shutil.rmtree(output_dir)
     if not os.path.exists(dir):
         os.mkdir(dir)
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
+    for f in os.listdir(output_dir):
+        if f.endswith('.htm'):
+            os.remove(os.path.join(output_dir, f))
     for id in docs:
         # first convert to markdown
         mdfile = os.path.join(dir, doc_map[id]).replace('.htm','.md')
@@ -70,7 +73,10 @@ def convert_docs(output_dir, bibliography_file=False, citation_format=False):
             pandoc_call.extend(['--csl', citation_format])
         pandoc_call.extend(['-f', 'markdown', '-t', 'html', '-o', outfile, mdfile])
         call(pandoc_call)
-    shutil.rmtree(dir)
+    if os.path.exists(os.path.join(output_dir,dir)):
+        shutil.rmtree(os.path.join(output_dir,dir))
+    shutil.move(dir, output_dir)
+
 
 def build_outline(sections):
     ''' Creates a markdown representation of the outline '''
@@ -128,18 +134,31 @@ def templatize(template, css, dir, nav):
     shutil.copyfile(css, os.path.join(dir, os.path.basename(css)))
 
 
-def do_git(dir):
+def do_git(dir, remote):
     from git import Repo
     print "Pushing to git"
-    repo = Repo(dir)
-    for f in os.listdir(dir):
-        if not f.startswith('.'):
-            repo.index.add([f])
-    repo.index.commit("Autocommit from scriv2web")
     try:
-        repo.remotes.origin.push()
+        repo = Repo(dir)
+        """
+        for f in os.listdir(dir):
+            if not f.startswith('.'):
+                repo.index.add([f])
+        for f in os.listdir(os.path.join(dir,'.markdown')):
+            if not f.startswith('.'):
+                repo.index.add([os.path.join('.markdown',f)])
+        """
+        repo.git.add(A=True)
+        #repo.git.add('--all')
+        repo.index.commit("Autocommit from scriv2web")
+        if remote:
+            try:
+                repo.remotes[remote].push()
+            except:
+                print "Couldn't commit to remote named ",remote
+        else:
+            print "No remote provided"
     except:
-        print "Couldn't commit to remote named origin"
+        print "No git repository available"
 
 def parse_scrivener_file(fn):
     ''' Parses XML file for an outline '''
@@ -165,6 +184,8 @@ if __name__=='__main__':
         dest="template_file", default='template.default', help="location of template file")
     parser.add_argument("-s", "--css",
         dest="css_file", default='default.css', help="location of css file")
+    parser.add_argument("-r", "--remote",
+        dest="git_remote", default=False, help="name of git remote to push to")
     args = parser.parse_args()
     project_path = args.project_path
     output_dir = args.output_dir
@@ -172,6 +193,7 @@ if __name__=='__main__':
     template_file = args.template_file
     css_file = args.css_file
     csl = args.csl
+    git_remote = args.git_remote
     project_file = False
     project_docs = False
     title = False
@@ -200,4 +222,4 @@ if __name__=='__main__':
     outline = build_outline(sections)
     convert_docs(output_dir, bibliography_file=bibliography, citation_format=csl)
     templatize( template_file, css_file, output_dir, outline)
-    do_git(output_dir)
+    do_git(output_dir, remote=git_remote)
