@@ -87,29 +87,56 @@ def build_outline(sections):
             return title
     def _s(d):
         return '*'
-    def process_section(s, depth=0):
+    def process_section(s, depth=0, path=[]):
         content = ""
         if 'IncludeInCompile' in s['MetaData'] and s['MetaData']['IncludeInCompile']:
             map_doc(s['@ID'], s['Title'])
+            path.append(s['@ID'])
             content = "%s%s %s\n" % ('\t'*depth, _s(depth),_l(s['@ID'],s['Title']))
             if 'Children' in s:
                 if 'Title' in s['Children']['BinderItem']:
                     map_doc(s['Children']['BinderItem']['@ID'], s['Children']['BinderItem']['Title'])
+                    path.append(s['Children']['BinderItem']['@ID'])
                     content = content + "%s%s %s\n" % ('\t'*(depth+1), _s(depth+1), _l(s['Children']['BinderItem']['@ID'], s['Children']['BinderItem']['Title']))
                 else:
                     for c in s['Children']['BinderItem']:
-                        content = content + process_section(c, depth=depth+1)
+                        content = content + process_section(c, depth=depth+1, path=path)
             return content
 
     content = ""
+    path = [] # build a linear path through the content
     for section in sections:
-        content = content + "%s" % process_section(section)
-    return content
+        content = content + "%s" % process_section(section, path=path)
+    return content, path
 
-def templatize(template, css, dir, nav):
+def templatize(template, css, dir, nav, path):
     ''' Takes a directory of html files and some navigation and merges them into new pages '''
     def extract_body(html):
         return html.split('<body>',1)[1].split('</body>', 1)[0]
+    def name2id(name):
+        for id, n in doc_map.iteritems():
+            if n==name:
+                return id
+        return False
+    def next(name):
+        id = name2id(name)
+        b = False
+        for p in path:
+            if b and p in docs:
+                return "<a href='%s'>&rarr; %s</a>" % (doc_map[p], doc_map[p])
+            if id==p:
+                b = True
+        return ''
+    def prev(name):
+        id = name2id(name)
+        b = False
+        for p in path:
+            if b and id==p and b in docs:
+                return "<a href='%s'>%s &larr;</a>" % (doc_map[b], doc_map[b])
+            if p in docs:
+                b = p
+        return ''
+
     nav_md_file = os.path.join(dir, '_nav.md')
     nav_htm_file = os.path.join(dir, '_nav.htm')
     with open(nav_md_file,'w') as f:
@@ -129,6 +156,7 @@ def templatize(template, css, dir, nav):
             new_html = tpl
             with open(os.path.join(dir, f), 'r') as fr:
                 new_html = new_html.replace('%navigation',nav_html).replace('%content',extract_body(fr.read()))
+                new_html = "%s<p class='pager'>%s %s</p>" % (new_html, str(prev(f)),str(next(f)))
             with open(os.path.join(dir, f), 'w') as fw:
                 fw.write(new_html)
     shutil.copyfile(css, os.path.join(dir, os.path.basename(css)))
@@ -219,7 +247,7 @@ if __name__=='__main__':
     print "... outputting to ",output_dir
     load_docs(project_docs)
     sections = parse_scrivener_file(project_file)
-    outline = build_outline(sections)
+    outline, path = build_outline(sections)
     convert_docs(output_dir, bibliography_file=bibliography, citation_format=csl)
-    templatize( template_file, css_file, output_dir, outline)
+    templatize( template_file, css_file, output_dir, outline, path)
     do_git(output_dir, remote=git_remote)
