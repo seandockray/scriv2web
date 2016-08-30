@@ -16,6 +16,17 @@ Finally, if you want to export to GitHub (or some other remote repository) you'l
 
 ### Setup/Configuration
 
+Optional: Set up an output directory (which will be pointed to by the -o option below). If you want to view the output in GitHub pages then create the repo in GitHub and edit the settings to allow pages from the master branch. Then on your computer create a directory and hook it up to the new repo you have created.
+
+```
+mkdir /path/to/output_directory
+cd /path/to/output_directory
+git init
+git remote add origin https://github.com/[username]/[repo]
+```
+
+Now, to setup and run the script.
+
 ```
 git clone https://github.com/seandockray/scriv2web.git
 cd scriv2web
@@ -25,4 +36,4 @@ pip install -r requirements.txt
 ./publish.py -i /path/to/Project.scriv -o /path/to/output_directory  -b /path/to/biblatex/bibliography_file.bib -c /path/to/citation/style.csl -r git_remote_name
 ```
 
--i and -o are required, the rest are optional.
+-i and -o are required, the rest are optional. Only include -r if you did the git setup above.
