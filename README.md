@@ -20,8 +20,9 @@ Finally, if you want to export to GitHub (or some other remote repository) you'l
 git clone https://github.com/seandockray/scriv2web.git
 cd scriv2web
 virtualenv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ./publish.py -i /path/to/Project.scriv -o /path/to/output_directory  -b /path/to/biblatex/bibliography_file.bib -c /path/to/citation/style.csl -r git_remote_name
 ```
 
--i and -o are required, the rest are optional. 
+-i and -o are required, the rest are optional.
