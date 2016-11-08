@@ -250,4 +250,5 @@ if __name__=='__main__':
     outline, path = build_outline(sections)
     convert_docs(output_dir, bibliography_file=bibliography, citation_format=csl)
     templatize( template_file, css_file, output_dir, outline, path)
-    do_git(output_dir, remote=git_remote)
+    if git_remote:
+        do_git(output_dir, remote=git_remote)

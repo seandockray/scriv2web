@@ -23,7 +23,7 @@ h1, h2, h3 {
 #sidebar-wrapper {
     z-index: 1000;
     position: fixed;
-    left: 300px;
+    left: 305px;
     width: 0;
     height: 100%;
     margin-left: -300px;
@@ -37,6 +37,7 @@ h1, h2, h3 {
 
 #sidebar-wrapper ul {
     font-size: 0.9em;
+    padding-left: 15px;
 }
 
 #wrapper.toggled #sidebar-wrapper {
