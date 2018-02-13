@@ -47,7 +47,9 @@ def load_docs(dir):
     for f in os.listdir(dir):
         if not f=='docs.checksum':
             id = f.split('.')[0]
-            docs[id] = os.path.join(dir, f)
+            content_path = os.path.join(dir, f, 'content.rtf')
+            if os.path.exists(content_path):
+                docs[id] = content_path
 
 def convert_docs(output_dir, bibliography_file=False, citation_format=False):
     ''' Converts all rtf files to txt using textutil then html using pandoc '''
@@ -61,6 +63,8 @@ def convert_docs(output_dir, bibliography_file=False, citation_format=False):
         if f.endswith('.htm'):
             os.remove(os.path.join(output_dir, f))
     for id in docs:
+        if not id in doc_map:
+            continue
         # first convert to markdown
         mdfile = os.path.join(dir, doc_map[id]).replace('.htm','.md')
         outfile = os.path.join(output_dir, doc_map[id])
@@ -89,30 +93,44 @@ def build_outline(sections):
         return '*'
     def process_section(s, depth=0, path=[]):
         content = ""
-        if 'IncludeInCompile' in s['MetaData'] and s['MetaData']['IncludeInCompile']:
-            map_doc(s['@ID'], s['Title'])
-            path.append(s['@ID'])
-            content = "%s%s %s\n" % ('\t'*depth, _s(depth),_l(s['@ID'],s['Title']))
+        if 'MetaData' in s and 'IncludeInCompile' in s['MetaData'] and s['MetaData']['IncludeInCompile'] == 'Yes':
+            map_doc(s['@UUID'], s['Title'])
+            path.append(s['@UUID'])
+            content = "%s%s %s\n" % ('\t'*depth, _s(depth),_l(s['@UUID'],s['Title']))
             if 'Children' in s:
                 if 'Title' in s['Children']['BinderItem']:
-                    map_doc(s['Children']['BinderItem']['@ID'], s['Children']['BinderItem']['Title'])
-                    path.append(s['Children']['BinderItem']['@ID'])
-                    content = content + "%s%s %s\n" % ('\t'*(depth+1), _s(depth+1), _l(s['Children']['BinderItem']['@ID'], s['Children']['BinderItem']['Title']))
+                    map_doc(s['Children']['BinderItem']['@UUID'], s['Children']['BinderItem']['Title'])
+                    path.append(s['Children']['BinderItem']['@UUID'])
+                    content = content + "%s%s %s\n" % ('\t'*(depth+1), _s(depth+1), _l(s['Children']['BinderItem']['@UUID'], s['Children']['BinderItem']['Title']))
                 else:
                     for c in s['Children']['BinderItem']:
-                        content = content + process_section(c, depth=depth+1, path=path)
+                        processed_section = process_section(c, depth=depth+1, path=path)
+                        if processed_section:
+                            content = content + processed_section
             return content
 
     content = ""
     path = [] # build a linear path through the content
     for section in sections:
-        content = content + "%s" % process_section(section, path=path)
+        if section['@Type'] not in ['TrashFolder']:
+            content = content + "%s" % process_section(section, path=path)
     return content, path
+
+def handle_images(content, dir):
+    ''' Replaces Scrivener image tags with HTML and moves the file into the right place '''
+    matches = re.findall(r'(\{\$SCRImageLink\[w:(\d+);h:(\d+)\]=(.*)\})', content, re.M|re.I)
+    img_dir = os.path.join(dir, 'images')
+    for obj in matches:
+        if not os.path.exists(img_dir):
+            os.mkdir(img_dir)
+        shutil.copyfile(obj[3], os.path.join(img_dir, os.path.basename(obj[3])))
+        content = content.replace(obj[0], '<img src="images/%s">' % os.path.basename(obj[3]))
+    return content
 
 def templatize(template, css, dir, nav, path):
     ''' Takes a directory of html files and some navigation and merges them into new pages '''
     def extract_body(html):
-        return html.split('<body>',1)[1].split('</body>', 1)[0]
+        return handle_images(html, dir).split('<body>',1)[1].split('</body>', 1)[0]
     def name2id(name):
         for id, n in doc_map.iteritems():
             if n==name:
@@ -140,7 +158,7 @@ def templatize(template, css, dir, nav, path):
     nav_md_file = os.path.join(dir, '_nav.md')
     nav_htm_file = os.path.join(dir, '_nav.htm')
     with open(nav_md_file,'w') as f:
-        f.write(nav)
+        f.write(nav.encode('utf8'))
     pandoc_call = ['pandoc', '-s', '-S', '--normalize', '-f', 'markdown', '-t', 'html', '-o', nav_htm_file, nav_md_file]
     call(pandoc_call)
     html = ''
@@ -232,6 +250,9 @@ if __name__=='__main__':
                     title = f.replace('.scrivx','')
                     project_file = os.path.join(project_path, f)
                     project_docs = os.path.join(project_path, 'Files', 'Docs')
+                    project_docs_alt = os.path.join(project_path, 'Files', 'Data') # Scrivener 3 format
+                    if not os.path.exists(project_docs) and os.path.exists(project_docs_alt):
+                        project_docs = project_docs_alt
                     break
             if not project_file:
                 print "There is no Scrivener project in this location"
@@ -247,6 +268,7 @@ if __name__=='__main__':
     print "... outputting to ",output_dir
     load_docs(project_docs)
     sections = parse_scrivener_file(project_file)
+    #sys.exit(0)
     outline, path = build_outline(sections)
     convert_docs(output_dir, bibliography_file=bibliography, citation_format=csl)
     templatize( template_file, css_file, output_dir, outline, path)
