@@ -1,11 +1,23 @@
+html {
+    font-size: 16px;
+}
+
 body {
     overflow-x: hidden;
+    font-family: 'Poppins', sans-serif;
+    color: #333;
  }
 
 /* Toggle Styles */
 
+a:link    { color: #00c }  /* unvisited links */
+a:visited { color: #00a }  /* visited links   */
+a:hover   { color: #00f }  /* user hovers     */
+a:active  { color: #ccc }  /* active links    */
+
 h1, h2, h3 {
     color:#000;
+    font-family: 'Montserrat', sans-serif;
 }
 
 #wrapper {
@@ -17,16 +29,18 @@ h1, h2, h3 {
 }
 
 #wrapper.toggled {
-    padding-left: 300px;
+    padding-left: 200px;
 }
 
 #sidebar-wrapper {
+    font-size: 0.7rem;
+    letter-spacing: 1px;
     z-index: 1000;
     position: fixed;
-    left: 305px;
+    left: 205px;
     width: 0;
     height: 100%;
-    margin-left: -300px;
+    margin-left: -200px;
     overflow-y: auto;
     background: #fff;
     -webkit-transition: all 0.5s ease;
@@ -36,25 +50,58 @@ h1, h2, h3 {
 }
 
 #sidebar-wrapper ul {
-    font-size: 0.9em;
     padding-left: 15px;
+    font: normal normal 'Montserrat', sans-serif !important;
+    text-transform: uppercase;
+    list-style: none;
+    list-style-type: none;
+}
+
+#sidebar-wrapper > ul > li {
+    margin-top: 7px;
+}
+
+#sidebar-wrapper ul > li ul {
+    list-style: disc;
+    list-style-type: circle;
 }
 
 #wrapper.toggled #sidebar-wrapper {
-    width: 300px;
+    width: 100px;
 }
 
 #page-content-wrapper {
     width: 100%;
     position: absolute;
     padding: 15px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+#page-content-wrapper p {
+    margin-bottom: 15px;
+}
+
+#page-content-wrapper h1 {
+    font-size: 2em;
+    text-transform: uppercase;
+}
+
+#page-content-wrapper h2 {
+    font-size: 1.5em;
+    text-transform: uppercase;
+}
+
+#page-content-wrapper h3 {
+    font-size: 1.2em;
+    text-transform: uppercase;
 }
 
 #refs.references {
     border-top: 1px solid #DDD;
     margin-top: 30px;
     padding-top: 30px;
-    font-size:0.95em;
+    font-size:0.9em;
     color: #666;
 }
 
@@ -62,7 +109,13 @@ img{ width:100%; max-width:600px; }
 
 #wrapper.toggled #page-content-wrapper {
     position: absolute;
-    margin-right: -300px;
+    margin-right: -200px;
+}
+
+.pager a {
+    font: normal normal 'Montserrat', sans-serif !important;
+    font-size: 0.8em;
+    text-transform: uppercase;
 }
 
 /* Sidebar Styles */
@@ -70,10 +123,11 @@ img{ width:100%; max-width:600px; }
 .sidebar-nav {
     position: absolute;
     top: 0;
-    width: 300px;
+    width: 200px;
     margin: 0;
     padding: 0;
     list-style: none;
+    list-style-type: none;
 }
 
 .sidebar-nav li {
@@ -123,7 +177,7 @@ img{ width:100%; max-width:600px; }
 
 @media(min-width:768px) {
     #wrapper {
-        padding-left: 300px;
+        padding-left: 200px;
     }
 
     #wrapper.toggled {
@@ -131,7 +185,7 @@ img{ width:100%; max-width:600px; }
     }
 
     #sidebar-wrapper {
-        width: 300px;
+        width: 200px;
     }
 
     #wrapper.toggled #sidebar-wrapper {

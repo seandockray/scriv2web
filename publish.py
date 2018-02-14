@@ -94,6 +94,8 @@ def build_outline(sections):
     def process_section(s, depth=0, path=[]):
         content = ""
         if 'MetaData' in s and 'IncludeInCompile' in s['MetaData'] and s['MetaData']['IncludeInCompile'] == 'Yes':
+            if depth == 0 and 'Children' not in s:
+                return content
             map_doc(s['@UUID'], s['Title'])
             path.append(s['@UUID'])
             content = "%s%s %s\n" % ('\t'*depth, _s(depth),_l(s['@UUID'],s['Title']))
